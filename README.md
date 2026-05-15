@@ -47,7 +47,48 @@ trainer.train()
 # Check pulse_outputs/pulse_probe.jsonl
 ```
 
-That's it. No config, no API keys, no data upload.
+That's it. Local only. No data upload. No API keys needed.
+
+### With Remote Analysis (Optional)
+
+Connect to a Covec Scope server for real-time training health verdicts:
+
+```python
+callback = PulseCallback(
+    log_every=50,
+    endpoint="https://your-scope-server/v1/probe",
+    api_key="sk-your-key",
+)
+```
+
+Or configure via environment variables (no code changes):
+
+```bash
+export COVEC_ENDPOINT="https://your-scope-server/v1/probe"
+export COVEC_API_KEY="sk-your-key"
+```
+
+```python
+from covec_pulse import make_callback_from_config
+trainer.add_callback(make_callback_from_config())
+```
+
+Or via `.covec.yaml` in your project root:
+
+```yaml
+endpoint: "https://your-scope-server/v1/probe"
+api_key: "sk-your-key"
+log_every: 50
+scope_every: 100
+```
+
+Training output with Scope connected:
+```
+[Pulse] step=  100  HM/AM=2.1e-16  AM=2.3e-10
+[Scope] step=  100  SAFE (72%) -- Training converging steadily
+```
+
+**Remote analysis is fully opt-in.** Without `endpoint`, Pulse works entirely offline.
 
 ## What It Detects
 
@@ -133,6 +174,22 @@ records = read_probe_jsonl("pulse_outputs/pulse_probe.jsonl")
 stats = summary(records)
 print(stats["hm_am_trend"])  # "declining" or "stable"
 ```
+
+## Privacy
+
+**What Pulse sends when remote analysis is enabled:**
+
+| Sent | NOT sent |
+| ---- | -------- |
+| AM, HM (optimizer statistics) | Model weights |
+| HM/AM ratio | Gradients |
+| Optimizer hyperparams (lr, beta2, eps, wd) | Training data |
+| Step number, training loss | Activations |
+| Per-layer breakdown (if enabled) | Any model output |
+
+All data is aggregate statistics (~1 KB per probe). No model weights, no training samples, no generated text ever leave your machine. Communication is encrypted (HTTPS) and authenticated (API key).
+
+**Without `endpoint` configured, no data is sent anywhere. Pulse works entirely offline.**
 
 ## Compatibility
 

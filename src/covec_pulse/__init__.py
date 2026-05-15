@@ -2,10 +2,12 @@
 
 from covec_pulse.callback import PulseCallback
 from covec_pulse.checkpoint import diagnose_checkpoint
+from covec_pulse.config import make_callback_from_config
 from covec_pulse.core import SCHEMA_VERSION, probe_optimizer, ProbeSnapshot
 
 __all__ = [
     "PulseCallback",
+    "make_callback_from_config",
     "diagnose_checkpoint",
     "probe_optimizer",
     "ProbeSnapshot",
