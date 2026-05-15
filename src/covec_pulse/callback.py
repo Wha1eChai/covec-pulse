@@ -20,6 +20,9 @@ class PulseCallback(TrainerCallback):
         trainer = DPOTrainer(model=model, args=args, ...)
         trainer.add_callback(PulseCallback())
         trainer.train()
+
+        # With Scope server:
+        trainer.add_callback(PulseCallback(endpoint="https://api.covec.dev/v1/probe"))
     """
 
     def __init__(
@@ -27,12 +30,23 @@ class PulseCallback(TrainerCallback):
         log_every: int = 50,
         output_dir: str = "pulse_outputs",
         track_per_layer: bool = False,
+        endpoint: str | None = None,
+        scope_every: int | None = None,
     ):
         self.log_every = log_every
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.log_path = self.output_dir / "pulse_probe.jsonl"
         self._names_tagged = False
+
+        self._transport = None
+        self._scope_every = scope_every or (log_every * 2)
+        if endpoint:
+            from covec_pulse.transport import ScopeTransport
+            self._transport = ScopeTransport(
+                endpoint=endpoint,
+                verdict_path=self.output_dir / "scope_verdict.jsonl",
+            )
 
     def _tag_param_names(self, model, optimizer) -> None:
         if model is None or self._names_tagged:
@@ -81,3 +95,6 @@ class PulseCallback(TrainerCallback):
             f"HM/AM={snapshot.hm_am_ratio:.4e} "
             f"AM={snapshot.am:.4e} HM={snapshot.hm:.4e}"
         )
+
+        if self._transport and state.global_step % self._scope_every == 0:
+            self._transport.send(record)
