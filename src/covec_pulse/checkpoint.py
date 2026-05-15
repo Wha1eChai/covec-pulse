@@ -73,7 +73,7 @@ def diagnose_checkpoint(
     if opt_path is None:
         raise FileNotFoundError(f"No optimizer.pt found in {checkpoint_dir}")
 
-    opt_state = torch.load(opt_path, map_location="cpu", weights_only=False)
+    opt_state = torch.load(opt_path, map_location="cpu", weights_only=True)
     param_states = opt_state.get("state", {})
     if not param_states:
         raise ValueError("Optimizer state is empty")
