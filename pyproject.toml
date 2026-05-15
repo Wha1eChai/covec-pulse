@@ -1,0 +1,35 @@
+[project]
+name = "covec-pulse"
+version = "0.1.0"
+description = "Training health diagnostics from optimizer state. Detects capability loss before eval does."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [{ name = "Covec" }]
+keywords = ["llm", "fine-tuning", "dpo", "optimizer", "diagnostics", "training-health"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.0",
+    "transformers>=4.36",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/covec_pulse"]
+
+[project.scripts]
+pulse = "covec_pulse.cli:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
