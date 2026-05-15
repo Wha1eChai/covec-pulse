@@ -52,19 +52,32 @@ class ScopeTransport:
                 headers=headers,
                 method="POST",
             )
+            _MAX_RESPONSE = 16384
             with urlopen(req, timeout=self.timeout) as resp:
-                result = json.loads(resp.read().decode("utf-8"))
+                raw = resp.read(_MAX_RESPONSE)
+                result = json.loads(raw.decode("utf-8"))
 
+            if not isinstance(result, dict) or "verdict" not in result:
+                return
+
+            safe_record = {
+                "step": data.get("step"),
+                "verdict": result.get("verdict"),
+                "summary": result.get("summary", ""),
+            }
             with open(self.verdict_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(result, ensure_ascii=False) + "\n")
+                f.write(json.dumps(safe_record, ensure_ascii=False) + "\n")
 
             if self.display:
-                status = result.get("status", "?")
-                conf = result.get("confidence", "")
-                msg = result.get("message", "")
+                verdict = result.get("verdict", "?")
+                summary = result.get("summary", "")
                 step = data.get("step", "?")
-                print(f"[Scope] step={step:>5}  {status} ({conf}) -- {msg}")
+                print(f"[Scope] step={step:>5}  {verdict} -- {summary}")
                 sys.stdout.flush()
 
-        except (URLError, OSError, ValueError, KeyError):
+        except (URLError, OSError) as e:
+            if "SSL" in str(e) or "CERTIFICATE" in str(e).upper():
+                print(f"[Scope] WARNING: TLS error — {e}", file=sys.stderr)
+            # Other network errors: silent (don't disrupt training)
+        except (ValueError, KeyError):
             pass
