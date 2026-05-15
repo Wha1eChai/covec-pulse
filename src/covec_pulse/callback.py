@@ -31,6 +31,7 @@ class PulseCallback(TrainerCallback):
         output_dir: str = "pulse_outputs",
         track_per_layer: bool = False,
         endpoint: str | None = None,
+        api_key: str | None = None,
         scope_every: int | None = None,
     ):
         self.log_every = log_every
@@ -45,6 +46,7 @@ class PulseCallback(TrainerCallback):
             from covec_pulse.transport import ScopeTransport
             self._transport = ScopeTransport(
                 endpoint=endpoint,
+                api_key=api_key,
                 verdict_path=self.output_dir / "scope_verdict.jsonl",
             )
 

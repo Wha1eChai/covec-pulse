@@ -19,11 +19,13 @@ class ScopeTransport:
     def __init__(
         self,
         endpoint: str,
+        api_key: str | None = None,
         verdict_path: str | Path = "pulse_outputs/scope_verdict.jsonl",
         timeout: float = 3.0,
         display: bool = True,
     ):
         self.endpoint = endpoint
+        self.api_key = api_key
         self.verdict_path = Path(verdict_path)
         self.verdict_path.parent.mkdir(parents=True, exist_ok=True)
         self.timeout = timeout
@@ -41,10 +43,13 @@ class ScopeTransport:
     def _post(self, data: dict) -> None:
         try:
             body = json.dumps(data, ensure_ascii=False).encode("utf-8")
+            headers = {"Content-Type": "application/json"}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
             req = Request(
                 self.endpoint,
                 data=body,
-                headers={"Content-Type": "application/json"},
+                headers=headers,
                 method="POST",
             )
             with urlopen(req, timeout=self.timeout) as resp:
